@@ -68,16 +68,16 @@ static NSString *InstagramId = @"com.burbn.instagram";
         
         NSData *pngData = [[NSData alloc] initWithBase64EncodedString:objectAtIndex0 options:0];
         UIImage *image = [[UIImage alloc] initWithData:pngData];
-        NSString *docsDir = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
+        NSString *tmpDir = NSTemporaryDirectory();
         
         NSString *path;
         NSString *uti;
         
         if (IS_IOS13orHIGHER) {
-            path = [docsDir stringByAppendingPathComponent:@"StyleSeat.ig"];
+            path = [tmpDir stringByAppendingPathComponent:@"StyleSeat.ig"];
             uti = @"com.instagram.exclusivegram";
         } else {
-            path = [docsDir stringByAppendingPathComponent:@"StyleSeat.igo"];
+            path = [tmpDir stringByAppendingPathComponent:@"StyleSeat.igo"];
             uti = @"com.instagram.exclusivegram";
         }
         [UIImageJPEGRepresentation(image, 1.0) writeToFile:path atomically:true];
