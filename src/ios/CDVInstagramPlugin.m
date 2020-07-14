@@ -22,8 +22,13 @@
     WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#import <AssetsLibrary/AssetsLibrary.h>
+
 #import <Cordova/CDV.h>
 #import "CDVInstagramPlugin.h"
+#import <UIKit/UIKit.h>
+
+#define IS_IOS13orHIGHER ([[[UIDevice currentDevice] systemVersion] floatValue] >= 13.0)
 
 static NSString *InstagramId = @"com.burbn.instagram";
 
@@ -48,6 +53,7 @@ static NSString *InstagramId = @"com.burbn.instagram";
     
 }
 
+
 - (void)share:(CDVInvokedUrlCommand*)command {
     self.callbackId = command.callbackId;
     self.toInstagram = FALSE;
@@ -60,20 +66,34 @@ static NSString *InstagramId = @"com.burbn.instagram";
     if ([[UIApplication sharedApplication] canOpenURL:instagramURL]) {
         NSLog(@"open in instagram");
         
-        NSData *imageObj = [[NSData alloc] initWithBase64EncodedString:objectAtIndex0 options:0];
-        NSString *tmpDir = NSTemporaryDirectory();
-        NSString *path = [tmpDir stringByAppendingPathComponent:@"instagram.igo"];
+        NSData *pngData = [[NSData alloc] initWithBase64EncodedString:objectAtIndex0 options:0];
+        UIImage *image = [[UIImage alloc] initWithData:pngData];
+        NSString *docsDir = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
         
-        [imageObj writeToFile:path atomically:true];
+        NSString *path;
+        NSString *uti;
+        
+        if (IS_IOS13orHIGHER) {
+            path = [docsDir stringByAppendingPathComponent:@"StyleSeat.ig"];
+            uti = @"com.instagram.exclusivegram";
+        } else {
+            path = [docsDir stringByAppendingPathComponent:@"StyleSeat.igo"];
+            uti = @"com.instagram.exclusivegram";
+        }
+        [UIImageJPEGRepresentation(image, 1.0) writeToFile:path atomically:true];
         
         self.interactionController = [UIDocumentInteractionController interactionControllerWithURL:[NSURL fileURLWithPath:path]];
-        self.interactionController .UTI = @"com.instagram.exclusivegram";
+        self.interactionController .UTI = uti;
+        
+        // Captions don't seem to be supported anymore
+        /*
         if (caption) {
             self.interactionController .annotation = @{@"InstagramCaption" : caption};
         }
+         */
         self.interactionController .delegate = self;
         [self.interactionController presentOpenInMenuFromRect:CGRectZero inView:self.webView animated:YES];
-        
+
     } else {
         result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageToErrorObject:1];
         [self.commandDelegate sendPluginResult:result callbackId: self.callbackId];
@@ -90,12 +110,12 @@ static NSString *InstagramId = @"com.burbn.instagram";
     if ([[UIApplication sharedApplication] canOpenURL:instagramURL]) {
         NSLog(@"open asset in instagram");
         
-		NSString *localIdentifierEscaped = [localIdentifier stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
-		NSURL *instagramShareURL   = [NSURL URLWithString:[NSString stringWithFormat:@"instagram://library?LocalIdentifier=%@", localIdentifierEscaped]];
-		
-		[[UIApplication sharedApplication] openURL:instagramShareURL];
+        NSString *localIdentifierEscaped = [localIdentifier stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
+        NSURL *instagramShareURL   = [NSURL URLWithString:[NSString stringWithFormat:@"instagram://library?LocalIdentifier=%@", localIdentifierEscaped]];
+        
+        [[UIApplication sharedApplication] openURL:instagramShareURL];
 
-		result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:result callbackId: self.callbackId];
         
     } else {
